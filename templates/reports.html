@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Reports</h1>
+    <!-- Month selector -->
+    <form method="GET" style="display:flex;gap:8px;align-items:center">
+        <select name="month" onchange="this.form.submit()" style="padding:8px;border-radius:8px;border:1px solid #ccc">
+            {% for opt in month_options %}
+                <option value="{{ opt.month }}" {% if opt.month == selected_month %}selected{% endif %}>
+                    {{ opt.label }}
+                </option>
+            {% endfor %}
+        </select>
+        <select name="year" onchange="this.form.submit()" style="padding:8px;border-radius:8px;border:1px solid #ccc">
+            {% for opt in month_options %}
+                <option value="{{ opt.year }}" {% if opt.year == selected_year %}selected{% endif %}>
+                    {{ opt.year }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<!-- Charts -->
+<div class="charts-grid">
+    <div class="chart-card">
+        <h2>Expenses by Category</h2>
+        {% if cat_data %}
+            <canvas id="pieChart"></canvas>
+        {% else %}
+            <p style="color:#aaa">No data for this month.</p>
+        {% endif %}
+    </div>
+    <div class="chart-card">
+        <h2>Income vs Expenses (Last 6 Months)</h2>
+        <canvas id="barChart"></canvas>
+    </div>
+</div>
+
+<div class="chart-card" style="margin-bottom:30px">
+    <h2>Spending Trend (Last 12 Months)</h2>
+    <canvas id="lineChart" style="max-height:250px"></canvas>
+</div>
+
+<!-- Category Breakdown Table -->
+{% if cat_breakdown %}
+<div class="table-wrapper">
+    <h2 style="margin-bottom:15px">Category Breakdown</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in cat_breakdown %}
+            <tr>
+                <td>
+                    <span class="category-dot" style="background:{{ row.color }}"></span>
+                    {{ row.name }}
+                </td>
+                <td>{{ current_user.currency }} {{ "%.2f"|format(row.amount) }}</td>
+                <td>
+                    <div class="progress-track" style="width:120px;display:inline-block;vertical-align:middle;margin-right:8px">
+                        <div class="progress-bar green" style="width:{{ row.percentage }}%"></div>
+                    </div>
+                    {{ row.percentage }}%
+                </td>
+            </tr>
+            {% endfor %}
+            <tr style="font-weight:700;background:#f7fafd">
+                <td>Total</td>
+                <td>{{ current_user.currency }} {{ "%.2f"|format(total_expenses) }}</td>
+                <td>100%</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Pie chart
+    const catLabels = {{ cat_data.keys()|list|tojson }};
+    const catValues = {{ cat_data.values()|list|tojson }};
+    const catColors = {{ cat_colors|tojson }};
+    if (catLabels.length > 0) {
+        new Chart(document.getElementById('pieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{ data: catValues, backgroundColor: catColors, borderWidth: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+
+    // Bar chart: income vs expenses
+    new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ months_labels|tojson }},
+            datasets: [
+                { label: 'Income', data: {{ income_data|tojson }}, backgroundColor: '#28a745' },
+                { label: 'Expenses', data: {{ expense_data|tojson }}, backgroundColor: '#dc3545' }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // Line chart: spending trend
+    new Chart(document.getElementById('lineChart'), {
+        type: 'line',
+        data: {
+            labels: {{ trend_labels|tojson }},
+            datasets: [{
+                label: 'Monthly Expenses',
+                data: {{ trend_data|tojson }},
+                borderColor: '#2E75B6',
+                backgroundColor: 'rgba(46,117,182,0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+{% endblock %}

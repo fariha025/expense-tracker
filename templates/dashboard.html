@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <span style="color:#888">{{ now.strftime('%B %Y') if now else '' }}</span>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="card income">
+        <h2>Total Income</h2>
+        <div class="amount">{{ current_user.currency }} {{ "%.2f"|format(total_income) }}</div>
+    </div>
+    <div class="card expense">
+        <h2>Total Expenses</h2>
+        <div class="amount">{{ current_user.currency }} {{ "%.2f"|format(total_expenses) }}</div>
+    </div>
+    <div class="card balance">
+        <h2>Net Balance</h2>
+        <div class="amount">{{ current_user.currency }} {{ "%.2f"|format(net_balance) }}</div>
+    </div>
+</div>
+
+<!-- Budget Progress -->
+{% if budget %}
+<div class="budget-section">
+    <h2>Monthly Budget — {{ current_user.currency }} {{ "%.2f"|format(budget.amount) }}</h2>
+    <div class="progress-track">
+        <div class="progress-bar
+            {% if budget_pct > 90 %}red
+            {% elif budget_pct > 75 %}yellow
+            {% else %}green{% endif %}"
+            style="width: {{ [budget_pct, 100]|min }}%">
+        </div>
+    </div>
+    <div class="progress-label">{{ budget_pct }}% used
+        {% if budget_pct >= 90 %}
+            ⚠️ You have used 90% of your budget!
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="budget-section">
+    <h2>No budget set for this month</h2>
+    <a href="{{ url_for('budgets.index') }}" class="btn btn-primary btn-sm">Set Budget</a>
+</div>
+{% endif %}
+
+<!-- Charts -->
+<div class="charts-grid">
+    <div class="chart-card">
+        <h2>Expenses by Category</h2>
+        {% if cat_data %}
+            <canvas id="pieChart"></canvas>
+        {% else %}
+            <p style="color:#aaa">No expense data yet.</p>
+        {% endif %}
+    </div>
+    <div class="chart-card">
+        <h2>Daily Spending</h2>
+        {% if daily_data %}
+            <canvas id="barChart"></canvas>
+        {% else %}
+            <p style="color:#aaa">No expense data yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="recent-section">
+    <div class="page-header">
+        <h2>Recent Transactions</h2>
+        <a href="{{ url_for('transactions.list_transactions') }}" class="btn btn-secondary btn-sm">View All</a>
+    </div>
+    {% if recent %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Type</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in recent %}
+            <tr>
+                <td>{{ t.date }}</td>
+                <td>{{ t.description or '—' }}</td>
+                <td>{{ t.category.name if t.category else '—' }}</td>
+                <td><span class="badge badge-{{ t.type }}">{{ t.type }}</span></td>
+                <td>{{ current_user.currency }} {{ "%.2f"|format(t.amount) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p style="color:#aaa;padding:20px 0">No transactions yet. <a href="{{ url_for('transactions.add_transaction') }}">Add one</a></p>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const catLabels = {{ cat_data.keys()|list|tojson }};
+    const catValues = {{ cat_data.values()|list|tojson }};
+    const catColors = {{ cat_colors|tojson }};
+
+    if (catLabels.length > 0) {
+        new Chart(document.getElementById('pieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{ data: catValues, backgroundColor: catColors, borderWidth: 2 }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    const dailyLabels = {{ daily_data.keys()|list|tojson }};
+    const dailyValues = {{ daily_data.values()|list|tojson }};
+
+    if (dailyLabels.length > 0) {
+        new Chart(document.getElementById('barChart'), {
+            type: 'bar',
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: 'Spending',
+                    data: dailyValues,
+                    backgroundColor: '#2E75B6'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+</script>
+{% endblock %}

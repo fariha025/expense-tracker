@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Settings</h1>
+</div>
+
+<div class="settings-grid">
+    <!-- Profile Settings -->
+    <div class="form-card" style="max-width:100%">
+        <h2 style="margin-bottom:20px">Profile Settings</h2>
+        <form method="POST">
+            {{ settings_form.hidden_tag() }}
+            <input type="hidden" name="save_settings" value="1">
+            <div class="form-group">
+                {{ settings_form.display_name.label }}
+                {{ settings_form.display_name(placeholder="Your display name") }}
+            </div>
+            <div class="form-group">
+                {{ settings_form.currency.label }}
+                {{ settings_form.currency() }}
+            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+    </div>
+
+    <!-- Change Password -->
+    <div class="form-card" style="max-width:100%">
+        <h2 style="margin-bottom:20px">Change Password</h2>
+        <form method="POST">
+            {{ password_form.hidden_tag() }}
+            <input type="hidden" name="change_password" value="1">
+            <div class="form-group">
+                {{ password_form.current_password.label }}
+                {{ password_form.current_password(placeholder="Current password") }}
+                {% for error in password_form.current_password.errors %}
+                    <div class="form-errors">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ password_form.new_password.label }}
+                {{ password_form.new_password(placeholder="New password") }}
+                {% for error in password_form.new_password.errors %}
+                    <div class="form-errors">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ password_form.confirm.label }}
+                {{ password_form.confirm(placeholder="Confirm new password") }}
+                {% for error in password_form.confirm.errors %}
+                    <div class="form-errors">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary">Change Password</button>
+        </form>
+    </div>
+</div>
+
+<!-- Danger Zone -->
+<div class="danger-zone">
+    <h2>⚠️ Danger Zone</h2>
+    <p>Deleting your account is permanent. All your transactions, categories, and budgets will be deleted and cannot be recovered.</p>
+    <form method="POST" action="{{ url_for('settings.delete_account') }}"
+          onsubmit="return confirm('Are you absolutely sure? This cannot be undone.')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger">Delete My Account</button>
+    </form>
+</div>
+
+{% endblock %}

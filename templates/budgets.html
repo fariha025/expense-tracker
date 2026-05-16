@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Budgets{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Budgets</h1>
+</div>
+
+<!-- Set Budget Form -->
+<div class="form-card" style="max-width:100%;margin-bottom:30px">
+    <h2 style="margin-bottom:15px">Set a Budget</h2>
+    <form method="POST" action="{{ url_for('budgets.index') }}">
+        {{ form.hidden_tag() }}
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0">
+                {{ form.category_id.label }}
+                {{ form.category_id() }}
+            </div>
+            <div class="form-group" style="flex:1;min-width:120px;margin-bottom:0">
+                {{ form.amount.label }}
+                {{ form.amount(placeholder="0.00") }}
+                {% for error in form.amount.errors %}
+                    <div class="form-errors">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+                {{ form.month.label }}
+                {{ form.month() }}
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+                {{ form.year.label }}
+                {{ form.year() }}
+            </div>
+            <button type="submit" class="btn btn-primary">Save Budget</button>
+        </div>
+    </form>
+</div>
+
+<!-- Overall Budget -->
+<div class="budget-section">
+    <h2>Overall Monthly Budget</h2>
+    {% if overall_budget %}
+        <p style="margin-bottom:10px">
+            Budget: <strong>
+                {{ current_user.currency }} {{ "%.2f"|format(overall_budget.amount) }}
+            </strong>
+            &nbsp;|&nbsp; Spent: <strong>
+                {{ current_user.currency }} {{ "%.2f"|format(total_expenses) }}
+            </strong>
+        </p>
+        <div class="progress-track">
+            <div class="progress-bar
+                {% if overall_pct > 90 %}red
+                {% elif overall_pct > 75 %}yellow
+                {% else %}green{% endif %}"
+                style="width: {{ [overall_pct, 100]|min }}%">
+            </div>
+        </div>
+        <div class="progress-label">
+            {{ overall_pct }}% used
+            {% if overall_pct >= 90 %}
+                ⚠️ Budget almost exceeded!
+            {% endif %}
+        </div>
+    {% else %}
+        <p style="color:#aaa">
+            No overall budget set for this month.
+            Select "Overall (no category)" in the form above to set one.
+        </p>
+    {% endif %}
+</div>
+
+<!-- Per Category Budgets -->
+{% if cat_budgets %}
+<div class="table-wrapper" style="margin-top:25px">
+    <h2 style="margin-bottom:15px">Per-Category Budgets</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Budget</th>
+                <th>Spent</th>
+                <th>Progress</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in cat_budgets %}
+            {% set spent = spending.get(b.category_id, 0) %}
+            {% set pct = ((spent / b.amount) * 100)|round(1) if b.amount > 0 else 0 %}
+            <tr>
+                <td>
+                    {% for cat in categories if cat.id == b.category_id %}
+                        <span class="category-dot" style="background:{{ cat.color }}"></span>
+                        {{ cat.name }}
+                    {% endfor %}
+                </td>
+                <td>{{ current_user.currency }} {{ "%.2f"|format(b.amount) }}</td>
+                <td>{{ current_user.currency }} {{ "%.2f"|format(spent) }}</td>
+                <td style="min-width:150px">
+                    <div class="progress-track" style="margin-bottom:2px">
+                        <div class="progress-bar
+                            {% if pct > 90 %}red
+                            {% elif pct > 75 %}yellow
+                            {% else %}green{% endif %}"
+                            style="width: {{ [pct, 100]|min }}%">
+                        </div>
+                    </div>
+                    <small>{{ pct }}%</small>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

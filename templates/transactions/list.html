@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Transactions{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Transactions</h1>
+    <div style="display:flex;gap:10px">
+        <a href="{{ url_for('transactions.export_csv') }}" class="btn btn-secondary">Export CSV</a>
+        <a href="{{ url_for('transactions.add_transaction') }}" class="btn btn-primary">+ Add Transaction</a>
+    </div>
+</div>
+
+<form method="GET" action="{{ url_for('transactions.list_transactions') }}">
+    <div class="filters-bar">
+        <div class="form-group">
+            <label>Search</label>
+            <input type="text" name="search" value="{{ search }}"
+                   placeholder="Search description...">
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <select name="category">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}"
+                        {% if request.args.get('category')|string == cat.id|string %}
+                            selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Type</label>
+            <select name="type">
+                <option value="">All Types</option>
+                <option value="income"
+                    {% if request.args.get('type') == 'income' %}selected{% endif %}>
+                    Income
+                </option>
+                <option value="expense"
+                    {% if request.args.get('type') == 'expense' %}selected{% endif %}>
+                    Expense
+                </option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>From</label>
+            <input type="date" name="start"
+                   value="{{ request.args.get('start', '') }}">
+        </div>
+        <div class="form-group">
+            <label>To</label>
+            <input type="date" name="end"
+                   value="{{ request.args.get('end', '') }}">
+        </div>
+        <div class="form-group">
+            <label>Sort By</label>
+            <select name="sort">
+                <option value="date"
+                    {% if sort == 'date' %}selected{% endif %}>Date</option>
+                <option value="amount"
+                    {% if sort == 'amount' %}selected{% endif %}>Amount</option>
+                <option value="category"
+                    {% if sort == 'category' %}selected{% endif %}>Category</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="{{ url_for('transactions.list_transactions') }}"
+           class="btn btn-secondary">Reset</a>
+    </div>
+</form>
+
+<div class="table-wrapper">
+    {% if transactions.items %}
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in transactions.items %}
+            <tr>
+                <td>{{ t.date }}</td>
+                <td>{{ t.description or '—' }}</td>
+                <td>
+                    {% if t.category %}
+                        <span class="category-dot"
+                              style="background:{{ t.category.color }}"></span>
+                        {{ t.category.name }}
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    <span class="badge badge-{{ t.type }}">{{ t.type }}</span>
+                </td>
+                <td>{{ current_user.currency }}
+                    {{ "%.2f"|format(t.amount) }}</td>
+                <td>
+                    <a href="{{ url_for('transactions.edit_transaction', id=t.id) }}"
+                       class="btn btn-secondary btn-sm">Edit</a>
+                    <form method="POST"
+                          action="{{ url_for('transactions.delete_transaction', id=t.id) }}"
+                          style="display:inline"
+                          onsubmit="return confirm('Delete this transaction?')">
+                        {{ delete_form.hidden_tag() }}
+                        <button type="submit"
+                                class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        {% if transactions.has_prev %}
+            <a href="{{ url_for('transactions.list_transactions',
+               page=transactions.prev_num, search=search, sort=sort) }}">← Prev</a>
+        {% endif %}
+        {% for page_num in transactions.iter_pages(left_edge=1, right_edge=1,
+                                                    left_current=2, right_current=2) %}
+            {% if page_num %}
+                {% if page_num == transactions.page %}
+                    <span class="current">{{ page_num }}</span>
+                {% else %}
+                    <a href="{{ url_for('transactions.list_transactions',
+                       page=page_num, search=search, sort=sort) }}">{{ page_num }}</a>
+                {% endif %}
+            {% else %}
+                <span>…</span>
+            {% endif %}
+        {% endfor %}
+        {% if transactions.has_next %}
+            <a href="{{ url_for('transactions.list_transactions',
+               page=transactions.next_num, search=search, sort=sort) }}">Next →</a>
+        {% endif %}
+    </div>
+
+    {% else %}
+    <p style="color:#aaa;padding:30px;text-align:center">
+        No transactions found.
+        <a href="{{ url_for('transactions.add_transaction') }}">Add one</a>
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

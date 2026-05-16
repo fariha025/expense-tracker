@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+
+<div class="page-header">
+    <h1>Categories</h1>
+</div>
+
+<div class="form-card" style="max-width:100%;margin-bottom:30px">
+    <h2 style="margin-bottom:15px">Add Custom Category</h2>
+    <form method="POST" action="{{ url_for('categories.add_category') }}">
+        {{ form.hidden_tag() }}
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="flex:1;margin-bottom:0">
+                {{ form.name.label }}
+                {{ form.name(placeholder="Category name") }}
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+                {{ form.color.label }}
+                {{ form.color(type="color",
+                   style="height:42px;width:60px;padding:2px;
+                          border-radius:8px;border:1px solid #ccc") }}
+            </div>
+            <button type="submit" class="btn btn-primary">Add Category</button>
+        </div>
+    </form>
+</div>
+
+<div class="categories-grid">
+    {% for cat in categories %}
+    <div class="category-card" style="border-left-color: {{ cat.color }}">
+        <div>
+            <span class="category-dot" style="background:{{ cat.color }}"></span>
+            <span class="cat-name">{{ cat.name }}</span>
+            <div class="cat-badge">
+                {{ 'Default' if cat.is_default else 'Custom' }}
+            </div>
+        </div>
+        {% if not cat.is_default %}
+        <div style="display:flex;flex-direction:column;gap:5px">
+            <form method="POST"
+                  action="{{ url_for('categories.edit_category', id=cat.id) }}"
+                  style="display:flex;gap:5px;align-items:center">
+                {{ delete_form.hidden_tag() }}
+                <input type="text" name="name" value="{{ cat.name }}"
+                       style="padding:4px 8px;border:1px solid #ccc;
+                              border-radius:6px;font-size:0.82rem;width:100px">
+                <input type="color" name="color" value="{{ cat.color }}"
+                       style="height:28px;width:35px;padding:1px;
+                              border-radius:4px;border:1px solid #ccc">
+                <button type="submit"
+                        class="btn btn-secondary btn-sm">Save</button>
+            </form>
+            <form method="POST"
+                  action="{{ url_for('categories.delete_category', id=cat.id) }}"
+                  onsubmit="return confirm('Delete this category?')">
+                {{ delete_form.hidden_tag() }}
+                <button type="submit"
+                        class="btn btn-danger btn-sm">Delete</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

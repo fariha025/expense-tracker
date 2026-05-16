@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <h1>Create Account</h1>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.display_name.label }}
+                {{ form.display_name(placeholder="Your name") }}
+                {% for error in form.display_name.errors %}
+                    <div class="form-errors">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.email.label }}
+                {{ form.email(placeholder="Enter your email") }}
+                {% for error in form.email.errors %}
+                    <div class="form-errors">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.password.label }}
+                {{ form.password(placeholder="Choose a password") }}
+                {% for error in form.password.errors %}
+                    <div class="form-errors">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.confirm.label }}
+                {{ form.confirm(placeholder="Repeat your password") }}
+                {% for error in form.confirm.errors %}
+                    <div class="form-errors">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%">Sign Up</button>
+        </form>
+        <div class="auth-footer">
+            Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
